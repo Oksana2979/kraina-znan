@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Освітній Портал «Країна Знань» (2 Клас НУШ)</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Comfortaa & Nunito -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@600;700&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- React & Babel CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 50%, #fbcfe8 100%);
+      min-height: 100vh;
+    }
+    .font-kids {
+      font-family: 'Comfortaa', cursive;
+    }
+    .bounce-hover {
+      transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .bounce-hover:hover {
+      transform: translateY(-4px) scale(1.02);
+    }
+    .card-shadow {
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    }
+    @keyframes pulseSoft {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+    .animate-pulseSoft {
+      animation: pulseSoft 2.2s infinite ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+    @keyframes scaleUp {
+      from { opacity: 0; transform: scale(0.92); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-scaleUp {
+      animation: scaleUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-amber-200 selection:text-amber-900">
+  <div id="root"></div>
+
+  <!-- Sound Effects Synthesizer using Web Audio API -->
+  <script>
+    window.playEffectSound = (type) => {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        const now = ctx.currentTime;
+        if (type === 'correct') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.2);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        } else if (type === 'wrong') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.exponentialRampToValueAtTime(130, now + 0.25);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === 'victory') {
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+            const o = ctx.createOscillator();
+            const g = ctx.createGain();
+            o.connect(g);
+            g.connect(ctx.destination);
+            o.frequency.value = freq;
+            g.gain.setValueAtTime(0.2, now + idx * 0.08);
+            g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.25);
+            o.start(now + idx * 0.08);
+            o.stop(now + idx * 0.08 + 0.25);
+          });
+        }
+      } catch (e) {
+        // Audio API blocked or unsupported
+      }
+    };
+  </script>
+
+  <!-- React Application Logic -->
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // Avatars Selection
+    const AVATARS = [
+      { id: 1, emoji: '🦊', name: 'Лисеня' },
+      { id: 2, emoji: '🦁', name: 'Левчик' },
+      { id: 3, emoji: '🦉', name: 'Совка' },
+      { id: 4, emoji: '🐰', name: 'Зайчик' },
+      { id: 5, emoji: '🐻', name: 'Ведмедик' },
+      { id: 6, emoji: '🐱', name: 'Котик' },
+      { id: 7, emoji: '🐶', name: 'Цуценя' },
+      { id: 8, emoji: '🐼', name: 'Панда' }
+    ];
+
+    // Standard Educational Games Catalog
+    const DEFAULT_GAMES = [
+      {
+        id: 'math-express',
+        title: 'Математичний Експрес 🚂',
+        category: 'Математика',
+        badgeColor: 'bg-emerald-500',
+        description: 'Швидкі обчислення в межах 20 та 100, табличне множення та приклади.',
+        questions: [
+          { q: '8 + 7 = ?', options: ['14', '15', '16', '13'], answer: '15' },
+          { q: '15 - 9 = ?', options: ['5', '6', '7', '8'], answer: '6' },
+          { q: '24 + 6 = ?', options: ['30', '20', '28', '32'], answer: '30' },
+          { q: '3 × 4 = ?', options: ['10', '12', '14', '16'], answer: '12' },
+          { q: '40 - 12 = ?', options: ['28', '38', '22', '30'], answer: '28' }
+        ]
+      },
+      {
+        id: 'word-masters',
+        title: 'Словесні Знавці 📚',
+        category: 'Українська мова',
+        badgeColor: 'bg-indigo-500',
+        description: 'Визначай частини мови, знаходь пропущені букви та виправляй помилки.',
+        questions: [
+          { q: 'Вибери ІМЕННИК (хто? що?):', options: ['Бігти', 'Яблуко', 'Веселий', 'Голосно'], answer: 'Яблуко' },
+          { q: 'Вибери ДІЄСЛОВО (що робити?):', options: ['Сонце', 'Малювати', 'Червоний', 'Дерево'], answer: 'Малювати' },
+          { q: 'Знайди слово БЕЗ помилки:', options: ['Вчитель', 'Фчітель', 'Вчицель', 'Вчитєль'], answer: 'Вчитель' },
+          { q: 'Вставити пропущену букву: "С_нечко"', options: ['о', 'а', 'и', 'е'], answer: 'о' },
+          { q: 'Вибери ПРИКМЕТНИК (який?):', options: ['Книжка', 'Співати', 'Розумний', 'Школа'], answer: 'Розумний' }
+        ]
+      },
+      {
+        id: 'logic-warmup',
+        title: 'Логічна Розминка 🧩',
+        category: 'Логіка',
+        badgeColor: 'bg-amber-500',
+        description: 'Тренуй кмітливість, числові закономірності та розгадуй загадки.',
+        questions: [
+          { q: 'Продовж послідовність: 2, 4, 6, 8, ...', options: ['9', '10', '11', '12'], answer: '10' },
+          { q: 'Хто влітку сірий, а взимку білий?', options: ['Ведмідь', 'Заєць', 'Лисиця', 'Їжачок'], answer: 'Заєць' },
+          { q: 'У мами 3 доньки. У кожної з них є 1 брат. Скільки дітей у мами?', options: ['3', '4', '6', '5'], answer: '4' },
+          { q: 'Яка фігура має 3 кути та 3 сторони?', options: ['Квадрат', 'Трикутник', 'Коло', 'Овал'], answer: 'Трикутник' }
+        ]
+      }
+    ];
+
+    function App() {
+      // Active Session User State: null (shows welcome screen) | { role: 'student'|'teacher', name, avatar }
+      const [currentUser, setCurrentUser] = useState(null);
+      const [activeGame, setActiveGame] = useState(null);
+
+      // Saved Student Info in LocalStorage
+      const [savedName, setSavedName] = useState(() => localStorage.getItem('kraina_student_name') || '');
+      const [savedAvatar, setSavedAvatar] = useState(() => localStorage.getItem('kraina_student_avatar') || '🦊');
+
+      // Teacher Panel States
+      const [selectedErrorDetails, setSelectedErrorDetails] = useState(null);
+      const [teacherTab, setTeacherTab] = useState('analytics'); // 'analytics' | 'request_game'
+      const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
+      const [toastMessage, setToastMessage] = useState('');
+
+      // Results & Saved Game Ideas stored in LocalStorage
+      const [gameResults, setGameResults] = useState(() => {
+        try {
+          const saved = localStorage.getItem('kraina_game_results');
+          return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+          return [];
+        }
+      });
+
+      const [savedGameIdeas, setSavedGameIdeas] = useState(() => {
+        try {
+          const saved = localStorage.getItem('kraina_game_ideas');
+          return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+          return [];
+        }
+      });
+
+      // Search & Filters for Analytics
+      const [searchQuery, setSearchQuery] = useState('');
+      const [gameFilter, setGameFilter] = useState('all');
+
+      // Sync state with localStorage
+      useEffect(() => {
+        localStorage.setItem('kraina_game_results', JSON.stringify(gameResults));
+      }, [gameResults]);
+
+      useEffect(() => {
+        localStorage.setItem('kraina_game_ideas', JSON.stringify(savedGameIdeas));
+      }, [savedGameIdeas]);
+
+      // Save Game Result function
+      const saveGameResult = (resultObj) => {
+        const newResult = {
+          ...resultObj,
+          id: 'res-' + Date.now(),
+          timestamp: Date.now()
+        };
+        setGameResults((prev) => [newResult, ...prev]);
+      };
+
+      // Student Login Handler
+      const handleLoginAsStudent = (name, avatar) => {
+        setSavedName(name);
+        setSavedAvatar(avatar);
+        localStorage.setItem('kraina_student_name', name);
+        localStorage.setItem('kraina_student_avatar', avatar);
+        setCurrentUser({ role: 'student', name, avatar });
+      };
+
+      // Teacher Login Handler
+      const handleLoginAsTeacher = () => {
+        setCurrentUser({ role: 'teacher', name: 'Вчитель' });
+      };
+
+      // Logout
+      const handleLogout = () => {
+        setCurrentUser(null);
+        setActiveGame(null);
+      };
+
+      // Delete Single Record
+      const handleDeleteSingleRecord = (idToDelete) => {
+        setGameResults((prev) => prev.filter(r => r.id !== idToDelete));
+      };
+
+      // Clear All Records
+      const handleClearAllRecords = () => {
+        setGameResults([]);
+        setShowClearConfirmModal(false);
+      };
+
+      // Export Results to CSV
+      const exportToCSV = () => {
+        if (gameResults.length === 0) return;
+        let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+        csvContent += "Ім'я Учня,Назва Гри,Успішність (%),Бал,Макс. Бал,Час,Кількість Помилок,Дата\n";
+
+        gameResults.forEach((r) => {
+          const dateStr = new Date(r.timestamp).toLocaleString('uk-UA');
+          const errCount = r.errors ? r.errors.length : 0;
+          csvContent += `"${r.studentName}","${r.gameTitle}",${r.accuracy}%,${r.score},${r.maxScore},"${r.timeTaken || '-'}",${errCount},"${dateStr}"\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Результати_Учнів_${new Date().toLocaleDateString('uk-UA')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
+      // Toast Notification Trigger
+      const showToast = (msg) => {
+        setToastMessage(msg);
+        setTimeout(() => setToastMessage(''), 4500);
+      };
+
+      return (
+        <div className="min-h-screen pb-12 flex flex-col relative">
+          
+          {/* TOAST ALERT NOTIFICATION */}
+          {toastMessage && (
+            <div className="fixed top-5 left-1/2 transform -translate-x-1/2 z-50 bg-slate-900 text-white font-bold text-sm px-6 py-3.5 rounded-2xl shadow-2xl border-2 border-yellow-400 flex items-center gap-3 animate-scaleUp">
+              <span className="text-xl">✨</span>
+              <span>{toastMessage}</span>
+            </div>
+          )}
+
+          {/* HEADER / NAVIGATION */}
+          <header className="bg-white/95 backdrop-blur-md border-b-4 border-yellow-300 sticky top-0 z-40 px-4 py-3 shadow-md">
+            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+              
+              {/* Portal Title */}
+              <div 
+                className="flex items-center gap-3 cursor-pointer select-none" 
+                onClick={() => setActiveGame(null)}
+              >
+                <div className="w-12 h-12 bg-yellow-400 rounded-2xl flex items-center justify-center text-2xl shadow-md border-2 border-yellow-500 transform -rotate-3">
+                  🌟
+                </div>
+                <div>
+                  <h1 className="font-kids text-2xl font-bold text-indigo-900 tracking-wide">
+                    Країна Знань
+                  </h1>
+                  <p className="text-xs text-slate-500 font-semibold">2 КЛАС • Освітній портал НУШ</p>
+                </div>
+              </div>
+
+              {/* Header Right Side */}
+              <div className="flex items-center gap-3">
+                {currentUser ? (
+                  <div className="flex items-center gap-3">
+                    {currentUser.role === 'student' ? (
+                      <div className="flex items-center gap-2 bg-amber-100/90 px-3.5 py-1.5 rounded-2xl border border-amber-300 text-slate-800 text-xs sm:text-sm font-bold shadow-sm">
+                        <span className="text-base">{currentUser.avatar}</span>
+                        <span className="text-indigo-950 font-black">{currentUser.name}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 bg-indigo-100 px-3.5 py-1.5 rounded-2xl border border-indigo-300 text-indigo-900 text-xs sm:text-sm font-bold shadow-sm">
+                        <span>👩‍🏫 Кабінет Вчителя</span>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleLogout}
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 rounded-xl border border-slate-200 transition-all font-bold text-xs flex items-center gap-1.5"
+                      title="Вийти"
+                    >
+                      <i className="fa-solid fa-right-from-bracket"></i>
+                      <span className="hidden sm:inline">Вийти</span>
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-xs font-bold text-slate-500 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200">
+                    Вітаємо у Країні Знань! ✨
+                  </span>
+                )}
+              </div>
+            </div>
+          </header>
+
+          {/* MAIN CONTENT AREA */}
+          <main className="max-w-6xl mx-auto w-full px-4 pt-6 flex-grow">
+            {!currentUser ? (
+              /* WELCOME / ENTRY SCREEN MODAL */
+              <WelcomeModal
+                savedName={savedName}
+                savedAvatar={savedAvatar}
+                onStudentLogin={handleLoginAsStudent}
+                onTeacherLogin={handleLoginAsTeacher}
+              />
+            ) : currentUser.role === 'student' ? (
+              activeGame ? (
+                <GameEngine
+                  game={activeGame}
+                  studentName={currentUser.name}
+                  studentAvatar={currentUser.avatar}
+                  onBack={() => setActiveGame(null)}
+                  onFinish={saveGameResult}
+                />
+              ) : (
+                <StudentCabinet
+                  studentName={currentUser.name}
+                  studentAvatar={currentUser.avatar}
+                  games={DEFAULT_GAMES}
+                  onSelectGame={(g) => setActiveGame(g)}
+                  results={gameResults.filter(r => r.studentName === currentUser.name)}
+                />
+              )
+            ) : (
+              <TeacherCabinet
+                results={gameResults}
+                allGames={DEFAULT_GAMES}
+                teacherTab={teacherTab}
+                setTeacherTab={setTeacherTab}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                gameFilter={gameFilter}
+                setGameFilter={setGameFilter}
+                onOpenErrorModal={(res) => setSelectedErrorDetails(res)}
+                onDeleteRecord={handleDeleteSingleRecord}
+                onOpenClearModal={() => setShowClearConfirmModal(true)}
+                onExportCSV={exportToCSV}
+                savedGameIdeas={savedGameIdeas}
+                onSaveIdea={(idea) => {
+                  setSavedGameIdeas(prev => [idea, ...prev]);
+                  showToast('Ідею гри збережено у списку розробок! 💾');
+                }}
+                onDeleteIdea={(id) => {
+                  setSavedGameIdeas(prev => prev.filter(i => i.id !== id));
+                }}
+                onShowToast={showToast}
+              />
+            )}
+          </main>
+
+          {/* DETAILED ERRORS MODAL */}
+          {selectedErrorDetails && (
+            <ErrorDetailsModal
+              result={selectedErrorDetails}
+              onClose={() => setSelectedErrorDetails(null)}
+            />
+          )}
+
+          {/* CLEAR ALL CONFIRMATION MODAL */}
+          {showClearConfirmModal && (
+            <ConfirmClearModal
+              onConfirm={handleClearAllRecords}
+              onCancel={() => setShowClearConfirmModal(false)}
+            />
+          )}
+
+          {/* FOOTER */}
+          <footer className="mt-12 text-center py-4 text-xs text-slate-500 font-semibold border-t border-slate-200/50">
+            © 2026 Країна Знань • Навчальні інтерактивні ігри для 2 класу НУШ
+          </footer>
+        </div>
+      );
+    }
+
+    /* =========================================================
+       1. WELCOME & LOGIN MODAL
+       ========================================================= */
+    function WelcomeModal({ savedName, savedAvatar, onStudentLogin, onTeacherLogin }) {
+      const [viewMode, setViewMode] = useState('student'); // 'student' | 'teacher_pin'
+      const [isEditingStudent, setIsEditingStudent] = useState(!savedName);
+      const [nameInput, setNameInput] = useState(savedName || '');
+      const [selectedAvatar, setSelectedAvatar] = useState(savedAvatar || '🦊');
+      const [pinInput, setPinInput] = useState('');
+      const [pinError, setPinError] = useState('');
+      const [validationError, setValidationError] = useState('');
+
+      const handleStudentSubmit = (e) => {
+        e.preventDefault();
+        const trimmed = nameInput.trim();
+        if (!trimmed) {
+          setValidationError('Будь ласка, напиши своє ім’я!');
+          return;
+        }
+        onStudentLogin(trimmed, selectedAvatar);
+      };
+
+      const handleTeacherSubmit = (e) => {
+        e.preventDefault();
+        if (pinInput === '1234') {
+          onTeacherLogin();
+        } else {
+          setPinError('Неправильний PIN-код! Спробуйте ще раз (PIN: 1234)');
+        }
+      };
+
+      return (
+        <div className="max-w-md mx-auto my-6 bg-white rounded-3xl p-6 sm:p-8 card-shadow border-4 border-yellow-300 relative animate-scaleUp">
+          
+          {/* Top Right Switch Button to Teacher Mode */}
+          <div className="flex justify-end mb-2">
+            {viewMode === 'student' ? (
+              <button
+                type="button"
+                onClick={() => setViewMode('teacher_pin')}
+                className="px-3.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+              >
+                <span>👩‍🏫 Вчитель</span>
+                <i className="fa-solid fa-key text-[10px]"></i>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setViewMode('student')}
+                className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5"
+              >
+                <span>← Назад для учнів</span>
+              </button>
+            )}
+          </div>
+
+          {viewMode === 'student' ? (
+            /* STUDENT LOGIN FORM */
+            savedName && !isEditingStudent ? (
+              /* RETURNING STUDENT (SECOND VISIT) */
+              <div className="text-center space-y-6">
+                <div className="w-24 h-24 bg-gradient-to-tr from-amber-300 to-yellow-400 rounded-3xl flex items-center justify-center text-6xl mx-auto shadow-lg border-4 border-white animate-pulseSoft">
+                  <span>{savedAvatar}</span>
+                </div>
+
+                <div>
+                  <h2 className="font-kids text-3xl font-bold text-slate-900">
+                    Привіт, {savedName}! 👋
+                  </h2>
+                  <p className="text-slate-600 font-semibold text-sm mt-1">
+                    Раді бачити тебе знову в Країні Знань!
+                  </p>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <button
+                    onClick={() => onStudentLogin(savedName, savedAvatar)}
+                    className="w-full py-4 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black rounded-2xl shadow-lg hover:shadow-xl transition-all text-xl tracking-wide flex items-center justify-center gap-2"
+                  >
+                    <span>Увійти 🚀</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsEditingStudent(true)}
+                    className="text-xs text-slate-500 hover:text-indigo-600 font-bold underline transition-colors"
+                  >
+                    ✏️ Змінити ім'я
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* NEW STUDENT (FIRST VISIT) */
+              <div className="space-y-5">
+                <div className="text-center space-y-1.5">
+                  <div className="w-16 h-16 bg-gradient-to-tr from-amber-300 to-yellow-400 rounded-2xl flex items-center justify-center text-4xl mx-auto shadow-md border-2 border-yellow-500">
+                    <span>{selectedAvatar}</span>
+                  </div>
+                  <h2 className="font-kids text-2xl font-bold text-slate-900 pt-1">
+                    Привіт! Як тебе звати? 🎈
+                  </h2>
+                  <p className="text-xs text-slate-600 font-semibold">
+                    Впиши своє ім'я та обери аватара для гри:
+                  </p>
+                </div>
+
+                <form onSubmit={handleStudentSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1 uppercase tracking-wider">
+                      Твоє ім'я:
+                    </label>
+                    <input
+                      type="text"
+                      autoFocus
+                      value={nameInput}
+                      onChange={(e) => { setNameInput(e.target.value); setValidationError(''); }}
+                      placeholder="Наприклад: Іванко, Марічка, Данилко..."
+                      className="w-full px-4 py-3 rounded-2xl border-2 border-slate-300 font-bold text-base text-slate-900 focus:border-indigo-600 focus:outline-none shadow-inner"
+                    />
+                    {validationError && (
+                      <p className="text-xs font-bold text-rose-500 mt-1 bg-rose-50 p-1.5 rounded-xl border border-rose-200 text-center">
+                        {validationError}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
+                      Обери аватара:
+                    </label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {AVATARS.map((av) => (
+                        <button
+                          key={av.id}
+                          type="button"
+                          onClick={() => setSelectedAvatar(av.emoji)}
+                          className={`text-2xl p-2 rounded-xl transition-all transform hover:scale-105 flex flex-col items-center justify-center ${
+                            selectedAvatar === av.emoji
+                              ? 'bg-yellow-200 border-2 border-yellow-500 shadow-md scale-105'
+                              : 'bg-slate-100 hover:bg-slate-200 border border-slate-200'
+                          }`}
+                        >
+                          <span>{av.emoji}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black rounded-2xl shadow-lg hover:shadow-xl transition-all text-lg tracking-wide flex items-center justify-center gap-2"
+                  >
+                    <span>Розпочати пригоду! 🚀</span>
+                  </button>
+                </form>
+              </div>
+            )
+          ) : (
+            /* TEACHER LOGIN FORM (PIN ENTRY) */
+            <div className="space-y-5 text-center py-2">
+              <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center text-3xl mx-auto text-indigo-600 border-2 border-indigo-200">
+                🔒
+              </div>
+
+              <div>
+                <h2 className="font-kids text-2xl font-bold text-slate-900">Вхід для Вчителя</h2>
+                <p className="text-xs text-slate-500 mt-1 font-semibold">
+                  Введіть пароль (PIN-код) для перегляду результатів
+                </p>
+              </div>
+
+              <form onSubmit={handleTeacherSubmit} className="space-y-4">
+                <div>
+                  <input
+                    type="password"
+                    maxLength="6"
+                    autoFocus
+                    value={pinInput}
+                    onChange={(e) => setPinInput(e.target.value)}
+                    placeholder="Введіть PIN (за замовчуванням 1234)"
+                    className="w-full text-center tracking-widest text-2xl font-bold py-3 px-4 rounded-2xl border-2 border-slate-300 focus:border-indigo-600 focus:outline-none"
+                  />
+                </div>
+
+                {pinError && (
+                  <p className="text-xs font-bold text-rose-500 bg-rose-50 p-2.5 rounded-xl border border-rose-200">
+                    {pinError}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg transition-all text-base flex items-center justify-center gap-2"
+                >
+                  <span>Увійти як вчитель</span>
+                  <i className="fa-solid fa-key text-sm"></i>
+                </button>
+              </form>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    /* =========================================================
+       2. STUDENT CABINET COMPONENT
+       ========================================================= */
+    function StudentCabinet({ studentName, studentAvatar, games, onSelectGame, results }) {
+      const totalStars = results.reduce((sum, r) => sum + (r.score || 0), 0);
+      const completedGames = results.length;
+
+      return (
+        <div className="space-y-8 animate-fadeIn">
+          {/* Welcome Banner */}
+          <div className="bg-gradient-to-r from-amber-300 via-orange-300 to-yellow-300 rounded-3xl p-6 shadow-xl border-4 border-white flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+            <div className="flex items-center gap-5 z-10">
+              <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center text-5xl shadow-lg border-4 border-yellow-400">
+                <span>{studentAvatar || '🦊'}</span>
+              </div>
+
+              <div>
+                <h2 className="font-kids text-2xl sm:text-3xl font-bold text-slate-900">
+                  {studentName ? `Привіт, ${studentName}! 👋` : 'Привіт, маленький розумнику! 👋'}
+                </h2>
+                <p className="text-slate-800 font-semibold text-sm sm:text-base mt-1">
+                  Обирай навчальну гру та здобувай зірочки!
+                </p>
+              </div>
+            </div>
+
+            {/* Achievements Counter */}
+            <div className="flex items-center gap-4 bg-white/90 backdrop-blur px-5 py-3 rounded-2xl border-2 border-white/80 shadow-sm z-10">
+              <div className="text-center px-2">
+                <div className="text-amber-500 text-xl sm:text-2xl font-black flex items-center justify-center gap-1">
+                  <span>⭐</span> <span>{totalStars}</span>
+                </div>
+                <div className="text-[11px] text-slate-600 font-bold uppercase tracking-wider">Зірочок</div>
+              </div>
+              <div className="h-8 w-px bg-slate-300"></div>
+              <div className="text-center px-2">
+                <div className="text-indigo-600 text-xl sm:text-2xl font-black flex items-center justify-center gap-1">
+                  <span>🏆</span> <span>{completedGames}</span>
+                </div>
+                <div className="text-[11px] text-slate-600 font-bold uppercase tracking-wider">Пройдено ігор</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Games Catalog Grid */}
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-kids text-2xl font-bold text-slate-900 flex items-center gap-2">
+                <span>🎮</span> Каталог Навчальних Ігор
+              </h3>
+              <span className="text-xs bg-white px-3 py-1.5 rounded-full font-bold text-slate-600 border border-slate-200 shadow-sm">
+                2 Клас (НУШ)
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {games.map((g) => (
+                <div
+                  key={g.id}
+                  className="bg-white rounded-3xl p-6 border-4 border-slate-100 card-shadow hover:border-yellow-300 transition-all duration-300 flex flex-col justify-between group bounce-hover"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className={`text-xs font-black text-white px-3 py-1 rounded-full uppercase tracking-wider ${g.badgeColor || 'bg-indigo-500'}`}>
+                        {g.category}
+                      </span>
+                      <span className="text-xs text-slate-400 font-bold flex items-center gap-1">
+                        <i className="fa-solid fa-clock"></i> ~2 хв
+                      </span>
+                    </div>
+
+                    <h4 className="font-kids text-xl font-bold text-slate-900 mb-2 group-hover:text-indigo-600 transition-colors">
+                      {g.title}
+                    </h4>
+
+                    <p className="text-slate-600 text-sm font-medium leading-relaxed mb-6">
+                      {g.description}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => onSelectGame(g)}
+                    className="w-full py-3.5 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-slate-900 font-black rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-base"
+                  >
+                    <span>Грати зараз</span>
+                    <i className="fa-solid fa-circle-play text-lg"></i>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* =========================================================
+       3. INTERACTIVE GAME ENGINE
+       ========================================================= */
+    function GameEngine({ game, studentName, studentAvatar, onBack, onFinish }) {
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const [score, setScore] = useState(0);
+      const [selectedOption, setSelectedOption] = useState(null);
+      const [isAnswered, setIsAnswered] = useState(false);
+      const [errors, setErrors] = useState([]);
+      const [isCompleted, setIsCompleted] = useState(false);
+      const [startTime] = useState(Date.now());
+      const [timeSpentSeconds, setTimeSpentSeconds] = useState(0);
+
+      const currentQ = game.questions[currentIndex];
+
+      useEffect(() => {
+        if (isCompleted) return;
+        const timer = setInterval(() => {
+          setTimeSpentSeconds(Math.floor((Date.now() - startTime) / 1000));
+        }, 1000);
+        return () => clearInterval(timer);
+      }, [isCompleted, startTime]);
+
+      const handleOptionClick = (opt) => {
+        if (isAnswered) return;
+
+        setSelectedOption(opt);
+        setIsAnswered(true);
+
+        const isCorrect = opt === currentQ.answer;
+
+        if (isCorrect) {
+          setScore((s) => s + 1);
+          window.playEffectSound('correct');
+        } else {
+          window.playEffectSound('wrong');
+          setErrors((prev) => [
+            ...prev,
+            {
+              question: currentQ.q,
+              userAnswer: opt,
+              correctAnswer: currentQ.answer
+            }
+          ]);
+        }
+
+        setTimeout(() => {
+          if (currentIndex + 1 < game.questions.length) {
+            setCurrentIndex((i) => i + 1);
+            setSelectedOption(null);
+            setIsAnswered(false);
+          } else {
+            finishGame(score + (isCorrect ? 1 : 0));
+          }
+        }, 1200);
+      };
+
+      const finishGame = (finalScore) => {
+        setIsCompleted(true);
+        window.playEffectSound('victory');
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }
+
+        const totalTimeStr = `${Math.floor(timeSpentSeconds / 60)} хв ${timeSpentSeconds % 60} сек`;
+        const accuracy = Math.round((finalScore / game.questions.length) * 100);
+
+        onFinish({
+          studentName,
+          gameId: game.id,
+          gameTitle: game.title,
+          score: finalScore,
+          maxScore: game.questions.length,
+          accuracy,
+          timeTaken: totalTimeStr,
+          errors
+        });
+      };
+
+      return (
+        <div className="max-w-2xl mx-auto space-y-6 animate-fadeIn">
+          {/* Top Game Navigation Bar */}
+          <div className="bg-white rounded-2xl p-4 shadow-md flex items-center justify-between border-2 border-slate-100">
+            <button
+              onClick={onBack}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm flex items-center gap-2"
+            >
+              <i className="fa-solid fa-arrow-left"></i> Назад
+            </button>
+
+            <div className="font-kids font-bold text-slate-800 text-base sm:text-lg">
+              {game.title}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xl">{studentAvatar}</span>
+              <span className="font-bold text-slate-700 text-sm hidden sm:inline">{studentName}</span>
+            </div>
+          </div>
+
+          {!isCompleted ? (
+            <div className="bg-white rounded-3xl p-6 sm:p-8 card-shadow border-4 border-yellow-200 relative overflow-hidden">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-3">
+                <span>Питання {currentIndex + 1} з {game.questions.length}</span>
+                <span className="flex items-center gap-1 text-indigo-600">
+                  <i className="fa-solid fa-stopwatch"></i> {timeSpentSeconds} сек
+                </span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden mb-8 border border-slate-200">
+                <div
+                  className="bg-gradient-to-r from-amber-400 to-emerald-500 h-full transition-all duration-300"
+                  style={{ width: `${((currentIndex + 1) / game.questions.length) * 100}%` }}
+                ></div>
+              </div>
+
+              {/* Question Text */}
+              <div className="bg-amber-50/90 rounded-2xl p-6 text-center border-2 border-amber-200 mb-8 min-h-[100px] flex items-center justify-center">
+                <h3 className="font-kids text-2xl sm:text-3xl font-bold text-slate-900 leading-snug">
+                  {currentQ.q}
+                </h3>
+              </div>
+
+              {/* Answer Options */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {currentQ.options.map((option, idx) => {
+                  let btnStyle = 'bg-slate-50 border-2 border-slate-200 text-slate-800 hover:bg-amber-100 hover:border-amber-400';
+                  if (isAnswered) {
+                    if (option === currentQ.answer) {
+                      btnStyle = 'bg-emerald-500 border-2 border-emerald-600 text-white shadow-lg scale-102';
+                    } else if (option === selectedOption) {
+                      btnStyle = 'bg-rose-500 border-2 border-rose-600 text-white';
+                    } else {
+                      btnStyle = 'bg-slate-100 text-slate-400 border-2 border-slate-200 opacity-50';
+                    }
+                  }
+
+                  return (
+                    <button
+                      key={idx}
+                      disabled={isAnswered}
+                      onClick={() => handleOptionClick(option)}
+                      className={`py-4 px-6 rounded-2xl font-kids text-xl font-bold transition-all text-center flex items-center justify-center shadow-sm ${btnStyle}`}
+                    >
+                      {option}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            /* Victory Screen */
+            <div className="bg-white rounded-3xl p-8 card-shadow border-4 border-yellow-300 text-center space-y-6 animate-scaleUp">
+              <div className="text-6xl animate-bounce">🏆</div>
+
+              <div>
+                <h3 className="font-kids text-3xl font-bold text-slate-900 mb-2">
+                  Чудова робота, {studentName}!
+                </h3>
+                <p className="text-slate-600 font-semibold">
+                  Ти успішно завершив(ла) гру <span className="text-indigo-600 font-bold">{game.title}</span>!
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-6 border-2 border-amber-200 grid grid-cols-3 gap-4">
+                <div>
+                  <div className="text-3xl font-black text-amber-500">{score} / {game.questions.length}</div>
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mt-1">Правильно</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-black text-indigo-600">{Math.round((score / game.questions.length) * 100)}%</div>
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mt-1">Точність</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-black text-emerald-600">{timeSpentSeconds}с</div>
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mt-1">Час</div>
+                </div>
+              </div>
+
+              <button
+                onClick={onBack}
+                className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-lg rounded-2xl shadow-lg hover:shadow-xl transition-all"
+              >
+                Повернутися до каталогу ігор 🚀
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    /* =========================================================
+       4. TEACHER CABINET & ANALYTICS DASHBOARD
+       ========================================================= */
+    function TeacherCabinet({
+      results,
+      allGames,
+      teacherTab,
+      setTeacherTab,
+      searchQuery,
+      setSearchQuery,
+      gameFilter,
+      setGameFilter,
+      onOpenErrorModal,
+      onDeleteRecord,
+      onOpenClearModal,
+      onExportCSV,
+      savedGameIdeas,
+      onSaveIdea,
+      onDeleteIdea,
+      onShowToast
+    }) {
+      const totalGamesPlayed = results.length;
+      const avgAccuracy = totalGamesPlayed > 0
+        ? Math.round(results.reduce((acc, r) => acc + (r.accuracy || 0), 0) / totalGamesPlayed)
+        : 0;
+
+      const totalErrorsMade = results.reduce((sum, r) => sum + (r.errors ? r.errors.length : 0), 0);
+      const uniqueStudentsCount = new Set(results.map(r => r.studentName)).size;
+
+      // Filtered Results
+      const filteredResults = results.filter((r) => {
+        const matchesName = r.studentName.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesGame = gameFilter === 'all' || r.gameTitle === gameFilter;
+        return matchesName && matchesGame;
+      });
+
+      return (
+        <div className="space-y-8 animate-fadeIn">
+          {/* Header Banner */}
+          <div className="bg-gradient-to-r from-indigo-700 via-indigo-800 to-purple-800 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-white/10 backdrop-blur rounded-2xl flex items-center justify-center text-3xl border border-white/20">
+                📊
+              </div>
+              <div>
+                <h2 className="font-kids text-2xl sm:text-3xl font-bold">Панель Аналітики Вчителя</h2>
+                <p className="text-indigo-200 text-xs sm:text-sm font-medium mt-0.5">
+                  Моніторинг успішності учнів, аналіз помилок та замовлення нових ігор
+                </p>
+              </div>
+            </div>
+
+            <div className="flex bg-indigo-950/40 p-1.5 rounded-2xl border border-white/10">
+              <button
+                onClick={() => setTeacherTab('analytics')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  teacherTab === 'analytics' ? 'bg-white text-indigo-900 shadow-md' : 'text-indigo-200 hover:text-white'
+                }`}
+              >
+                Аналітика
+              </button>
+              <button
+                onClick={() => setTeacherTab('request_game')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  teacherTab === 'request_game' ? 'bg-white text-indigo-900 shadow-md' : 'text-indigo-200 hover:text-white'
+                }`}
+              >
+                ✨ Замовити / Створити Гру
+              </button>
+            </div>
+          </div>
+
+          {/* Key Metrics */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white p-5 rounded-2xl card-shadow border border-slate-100">
+              <div className="text-slate-400 text-xs font-bold uppercase mb-1">Пройдено ігор</div>
+              <div className="text-3xl font-black text-indigo-600">{totalGamesPlayed}</div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl card-shadow border border-slate-100">
+              <div className="text-slate-400 text-xs font-bold uppercase mb-1">Середня успішність</div>
+              <div className="text-3xl font-black text-emerald-600">{avgAccuracy}%</div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl card-shadow border border-slate-100">
+              <div className="text-slate-400 text-xs font-bold uppercase mb-1">Залучено учнів</div>
+              <div className="text-3xl font-black text-amber-500">{uniqueStudentsCount}</div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl card-shadow border border-slate-100">
+              <div className="text-slate-400 text-xs font-bold uppercase mb-1">Виявлено помилок</div>
+              <div className="text-3xl font-black text-rose-500">{totalErrorsMade}</div>
+            </div>
+          </div>
+
+          {/* Analytics Table Tab */}
+          {teacherTab === 'analytics' && (
+            <div className="bg-white rounded-3xl p-6 card-shadow border border-slate-100 space-y-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto flex-grow">
+                  <div className="relative w-full sm:w-64">
+                    <i className="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400 text-xs"></i>
+                    <input
+                      type="text"
+                      placeholder="Пошук за іменем учня..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <select
+                    value={gameFilter}
+                    onChange={(e) => setGameFilter(e.target.value)}
+                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="all">Усі Навчальні Ігри</option>
+                    {allGames.map((g) => (
+                      <option key={g.id} value={g.title}>{g.title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <button
+                    onClick={onOpenClearModal}
+                    className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl border border-rose-200 transition-colors flex items-center gap-1.5"
+                    title="Очистити всі результати"
+                  >
+                    <i className="fa-solid fa-trash-can"></i>
+                    <span>Очистити історію</span>
+                  </button>
+
+                  <button
+                    onClick={onExportCSV}
+                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition-all flex items-center gap-1.5"
+                  >
+                    <i className="fa-solid fa-file-excel"></i>
+                    <span>Експорт CSV</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Data Table */}
+              <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      <th className="p-4">Учень</th>
+                      <th className="p-4">Назва Гри</th>
+                      <th className="p-4 text-center">Бал</th>
+                      <th className="p-4 text-center">Успішність</th>
+                      <th className="p-4 text-center">Час</th>
+                      <th className="p-4 text-center">Помилки</th>
+                      <th className="p-4 text-right">Дата</th>
+                      <th className="p-4 text-center">Дія</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-sm font-semibold text-slate-700">
+                    {filteredResults.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" className="p-8 text-center text-slate-400 font-medium">
+                          Записів не знайдено. Учні ще не проходили гру.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredResults.map((r) => {
+                        const errCount = r.errors ? r.errors.length : 0;
+                        return (
+                          <tr key={r.id || r.timestamp} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="p-4 font-bold text-slate-900">{r.studentName}</td>
+                            <td className="p-4 text-slate-800">{r.gameTitle}</td>
+                            <td className="p-4 text-center font-bold">{r.score} / {r.maxScore}</td>
+                            <td className="p-4 text-center">
+                              <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                                r.accuracy >= 80 ? 'bg-emerald-100 text-emerald-800' :
+                                r.accuracy >= 50 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'
+                              }`}>
+                                {r.accuracy}%
+                              </span>
+                            </td>
+                            <td className="p-4 text-center text-xs text-slate-500">{r.timeTaken || '-'}</td>
+                            <td className="p-4 text-center">
+                              {errCount > 0 ? (
+                                <button
+                                  onClick={() => onOpenErrorModal(r)}
+                                  className="px-3 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold rounded-lg text-xs flex items-center gap-1 mx-auto transition-colors"
+                                >
+                                  <span>{errCount} пом.</span>
+                                  <i className="fa-solid fa-circle-info"></i>
+                                </button>
+                              ) : (
+                                <span className="text-emerald-600 text-xs font-bold">Без помилок ✨</span>
+                              )}
+                            </td>
+                            <td className="p-4 text-right text-xs text-slate-400">
+                              {new Date(r.timestamp).toLocaleString('uk-UA', { dateStyle: 'short', timeStyle: 'short' })}
+                            </td>
+                            <td className="p-4 text-center">
+                              <button
+                                onClick={() => onDeleteRecord(r.id)}
+                                className="w-8 h-8 bg-slate-100 hover:bg-rose-100 text-slate-400 hover:text-rose-600 rounded-lg flex items-center justify-center transition-colors mx-auto"
+                                title="Видалити цього учня"
+                              >
+                                🗑️
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* New Game Request / Ideas Form Tab */}
+          {teacherTab === 'request_game' && (
+            <GameRequestForm
+              onSaveIdea={onSaveIdea}
+              savedGameIdeas={savedGameIdeas}
+              onDeleteIdea={onDeleteIdea}
+              onShowToast={onShowToast}
+            />
+          )}
+        </div>
+      );
+    }
+
+    /* =========================================================
+       5. GAME REQUEST / IDEA FORM (NEW SIMPLE TEACHER INTERFACE)
+       ========================================================= */
+    function GameRequestForm({ onSaveIdea, savedGameIdeas, onDeleteIdea, onShowToast }) {
+      const [category, setCategory] = useState('Українська мова');
+      const [gameTitle, setGameTitle] = useState('');
+      const [description, setDescription] = useState('');
+      const [mediaUrl, setMediaUrl] = useState(null);
+      const [mediaType, setMediaType] = useState('image');
+      const [mediaName, setMediaName] = useState('');
+
+      const handleFileUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setMediaName(file.name);
+        const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+        setMediaType(isPdf ? 'pdf' : 'image');
+
+        const reader = new FileReader();
+        reader.onload = (uploadEvent) => {
+          setMediaUrl(uploadEvent.target.result);
+        };
+        reader.readAsDataURL(file);
+      };
+
+      // Helper function to copy prompt to clipboard
+      const copyToClipboard = (text) => {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          onShowToast('Скопійовано! Вставте цей текст у чат із Джемом 🚀');
+        } catch (err) {
+          onShowToast('Будь ласка, скопіюйте текст вручну з поля нижче.');
+        }
+        document.body.removeChild(textarea);
+      };
+
+      const handleCopyPrompt = () => {
+        if (!description.trim()) {
+          alert('Будь ласка, опишіть хоча б декілька слів про зміст гри!');
+          return;
+        }
+
+        const formattedPrompt = `Привіт, Джем! Будь ласка, створи нову навчальну гру для учнів 2 класу НУШ для нашого порталу "Країна Знань".
+        
+📌 ПРЕДМЕТ/КАТЕГОРІЯ: ${category}
+🎯 НАЗВА/ТЕМА: ${gameTitle || 'За темою уроку'}
+📝 ЗМІСТ ТА ЗАВДАННЯ ГРИ:
+${description.trim()}
+${mediaName ? `\n🖼️ Додано файл з наочними матеріалами: ${mediaName}` : ''}`;
+
+        copyToClipboard(formattedPrompt);
+      };
+
+      const handleSaveIdeaSubmit = (e) => {
+        e.preventDefault();
+        if (!description.trim()) {
+          alert('Будь ласка, напишіть опис гри перед збереженням!');
+          return;
+        }
+
+        const newIdea = {
+          id: 'idea-' + Date.now(),
+          category,
+          title: gameTitle.trim() || 'Без назви',
+          description: description.trim(),
+          mediaUrl,
+          mediaType,
+          mediaName,
+          timestamp: Date.now()
+        };
+
+        onSaveIdea(newIdea);
+        // Clear form
+        setDescription('');
+        setGameTitle('');
+        setMediaUrl(null);
+        setMediaName('');
+      };
+
+      return (
+        <div className="space-y-8 animate-fadeIn">
+          {/* Main Request Box */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 card-shadow border-2 border-indigo-100 space-y-6">
+            <div className="border-b border-slate-100 pb-4">
+              <h3 className="font-kids text-2xl font-bold text-indigo-950 flex items-center gap-2">
+                <span>🪄</span> Опис та Замовлення Нової Гри
+              </h3>
+              <p className="text-xs text-slate-500 font-semibold mt-1">
+                Опишіть у довільній формі, що саме ви хочете бачити в грі, і я (Джем) одразу створю її для вашого класу!
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveIdeaSubmit} className="space-y-5">
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
+                    Предмет / Категорія:
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 text-sm font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="Математика">Математика 🚂</option>
+                    <option value="Українська мова">Українська мова 📚</option>
+                    <option value="Логіка">Логіка 🧩</option>
+                    <option value="Я досліджую світ">Я досліджую світ 🌿</option>
+                    <option value="Інше">Інше / Комбіноване 🎨</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
+                    Назва або тема гри (необов'язково):
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Наприклад: Влучні іменники, Таблиця множення на 3..."
+                    value={gameTitle}
+                    onChange={(e) => setGameTitle(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 text-sm font-bold text-slate-900 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Main Game Description Area */}
+              <div>
+                <label className="block text-xs font-bold text-indigo-900 mb-1.5 uppercase tracking-wider">
+                  Опишіть зміст гри, тему або що ви хочете в ній бачити:
+                </label>
+                <textarea
+                  required
+                  rows="5"
+                  placeholder="Наприклад: Зроби гру про іменники для 2 класу. Сюжет: допоможи білочці зібрати горішки. Завдання: визначити, де істота, а де неістота. Додай 5 питань із варіантами відповідей..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full px-4 py-3.5 rounded-2xl border-2 border-indigo-200 text-sm font-medium text-slate-900 focus:outline-none focus:border-indigo-600 shadow-inner leading-relaxed"
+                />
+              </div>
+
+              {/* Media Upload Box */}
+              <div className="bg-amber-50/70 p-4 rounded-2xl border-2 border-dashed border-amber-300 space-y-3">
+                <label className="block text-xs font-bold text-amber-900 uppercase tracking-wider">
+                  🖼️ Завантажити малюнок, картку чи PDF з прикладом/матеріалами:
+                </label>
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleFileUpload}
+                  className="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-200 file:text-amber-900 hover:file:bg-amber-300 transition-all cursor-pointer"
+                />
+
+                {mediaUrl && (
+                  <div className="bg-white p-3 rounded-xl border border-amber-300 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {mediaType === 'pdf' ? (
+                        <i className="fa-solid fa-file-pdf text-2xl text-rose-500"></i>
+                      ) : (
+                        <img src={mediaUrl} alt="Preview" className="w-12 h-12 object-cover rounded-lg border" />
+                      )}
+                      <span className="text-xs font-bold text-slate-700 truncate max-w-[200px]">
+                        {mediaName || 'Завантажений файл'}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setMediaUrl(null); setMediaName(''); }}
+                      className="text-xs text-rose-500 font-bold hover:underline"
+                    >
+                      Видалити
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={handleCopyPrompt}
+                  className="py-4 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-900 font-black rounded-2xl shadow-lg hover:shadow-xl transition-all text-base flex items-center justify-center gap-2"
+                >
+                  <i className="fa-solid fa-copy text-lg"></i>
+                  <span>📋 Скопіювати опис для Джема</span>
+                </button>
+
+                <button
+                  type="submit"
+                  className="py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg hover:shadow-xl transition-all text-base flex items-center justify-center gap-2"
+                >
+                  <i className="fa-solid fa-floppy-disk text-lg"></i>
+                  <span>💾 Зберегти ідею на порталі</span>
+                </button>
+              </div>
+
+            </form>
+          </div>
+
+          {/* List of Saved Ideas */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 card-shadow border border-slate-100 space-y-4">
+            <h4 className="font-kids text-xl font-bold text-slate-900 flex items-center gap-2">
+              <span>💡</span> Мої замовлення та ідеї ігор ({savedGameIdeas.length})
+            </h4>
+
+            {savedGameIdeas.length === 0 ? (
+              <div className="text-center py-8 text-slate-400 font-semibold text-sm">
+                Ви ще не зберегли жодної ідеї. Напишіть опис гри вище та натисніть «Зберегти ідею»!
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {savedGameIdeas.map((idea) => (
+                  <div key={idea.id} className="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between space-y-3 hover:border-indigo-300 transition-colors">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[11px] font-black text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full uppercase">
+                          {idea.category}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-bold">
+                          {new Date(idea.timestamp).toLocaleDateString('uk-UA')}
+                        </span>
+                      </div>
+
+                      <h5 className="font-kids font-bold text-slate-900 text-base mb-1">
+                        {idea.title}
+                      </h5>
+
+                      <p className="text-xs text-slate-600 font-medium whitespace-pre-wrap leading-relaxed line-clamp-4">
+                        {idea.description}
+                      </p>
+
+                      {idea.mediaName && (
+                        <div className="mt-2 text-[11px] font-bold text-amber-800 flex items-center gap-1.5 bg-amber-100/70 p-1.5 rounded-lg">
+                          <i className="fa-solid fa-paperclip"></i>
+                          <span className="truncate">{idea.mediaName}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
+                      <button
+                        onClick={() => {
+                          const text = `Запит для Джема:\nПредмет: ${idea.category}\nТема: ${idea.title}\nОпис: ${idea.description}`;
+                          copyToClipboard(text);
+                        }}
+                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                      >
+                        <i className="fa-solid fa-copy"></i> Скопіювати знову
+                      </button>
+
+                      <button
+                        onClick={() => onDeleteIdea(idea.id)}
+                        className="text-xs font-bold text-rose-500 hover:text-rose-700 p-1"
+                        title="Видалити ідею"
+                      >
+                        🗑️ Видалити
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    /* =========================================================
+       6. DETAILED ERRORS MODAL
+       ========================================================= */
+    function ErrorDetailsModal({ result, onClose }) {
+      return (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full card-shadow border-4 border-rose-200 space-y-5 animate-scaleUp max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-kids text-xl font-bold text-slate-900">
+                  Детальний аналіз помилок
+                </h3>
+                <p className="text-xs text-slate-500 font-semibold">
+                  Учень: <span className="text-indigo-600 font-bold">{result.studentName}</span> • Гра: {result.gameTitle}
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-500 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {result.errors && result.errors.length > 0 ? (
+                result.errors.map((err, idx) => (
+                  <div key={idx} className="bg-rose-50/70 p-4 rounded-2xl border border-rose-200 space-y-2">
+                    <div className="text-xs font-bold text-slate-500">Завдання №{idx + 1}:</div>
+                    <div className="font-kids font-bold text-slate-900 text-base">{err.question}</div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                      <div className="bg-white p-2.5 rounded-xl border border-rose-200 text-rose-700 font-bold">
+                        ❌ Відповідь учня: <span className="underline">{err.userAnswer}</span>
+                      </div>
+                      <div className="bg-white p-2.5 rounded-xl border border-emerald-200 text-emerald-700 font-bold">
+                        ✅ Правильно: <span>{err.correctAnswer}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-6 text-slate-500 font-semibold">
+                  Учень не припустився жодної помилки! 🎉
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={onClose}
+              className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl text-sm transition-all"
+            >
+              Закрити
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    /* =========================================================
+       7. CONFIRMATION CLEAR MODAL
+       ========================================================= */
+    function ConfirmClearModal({ onConfirm, onCancel }) {
+      return (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full card-shadow border-4 border-rose-300 text-center space-y-5 animate-scaleUp">
+            <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center text-3xl mx-auto">
+              ⚠️
+            </div>
+            <div>
+              <h3 className="font-kids text-xl font-bold text-slate-900">Очистити всю історію?</h3>
+              <p className="text-xs text-slate-500 font-semibold mt-1">
+                Всі результати та оцінки учнів будуть безповоротно видалені.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                onClick={onCancel}
+                className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs"
+              >
+                Скасувати
+              </button>
+              <button
+                onClick={onConfirm}
+                className="py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-md"
+              >
+                Видалити всі
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Render App
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
