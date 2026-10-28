@@ -414,19 +414,24 @@
         function endGame() {
             showScreen(screenResult);
             document.getElementById('final-score').innerText = score;
-            // Збереження результату для таблиці вчителя
-const gameResult = {
-  gameId: 'space-math',
-  gameTitle: 'Космічна Математика 🚀',
-  score: score,           // Набрані бали
-  maxScore: 20,          // Максимальний бал
-  date: new Date().toLocaleString('uk-UA')
-};
+           // Збереження результату для таблиці вчителя
+  const studentName = localStorage.getItem('kraina_student_name') || 'Учень';
+  const studentAvatar = localStorage.getItem('kraina_student_avatar') || '🦊';
 
-// Зчитуємо існуючі результати та додаємо новий
-const existingResults = JSON.parse(localStorage.getItem('kraina_znan_results') || '[]');
-existingResults.push(gameResult);
-localStorage.setItem('kraina_znan_results', JSON.stringify(existingResults));
+  const gameResult = {
+    id: Date.now(),
+    studentName: studentName,
+    studentAvatar: studentAvatar,
+    gameId: 'space-math',
+    gameTitle: 'Космічна Математика 🚀',
+    score: score,
+    maxScore: 20,
+    date: new Date().toLocaleString('uk-UA')
+  };
+
+  const existingResults = JSON.parse(localStorage.getItem('kraina_game_results') || '[]');
+  existingResults.push(gameResult);
+  localStorage.setItem('kraina_game_results', JSON.stringify(existingResults));
             const title = document.getElementById('result-title');
             const emoji = document.getElementById('result-emoji');
             
