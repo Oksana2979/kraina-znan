@@ -266,17 +266,8 @@
         isCustomEngine: true
       },
       {
-      id: 'space-math',
-      title: 'Космічна Математика 🚀',
-      category: 'Математика',
-      badgeColor: 'bg-purple-500',
-      description: 'Додавання та віднімання 1 від двоцифрових чисел. 2 рівні складності.',
-      externalUrl: 'математична_гра.html',
-      questions: []
-  },
-  {
-    id: 'math-express',
-    title: 'Математичний Експрес 🚂',,
+        id: 'math-express',
+        title: 'Математичний Експрес 🚂',
         category: 'Математика',
         badgeColor: 'bg-emerald-500',
         description: 'Швидкі обчислення в межах 20 та 100, табличне множення та приклади.',
@@ -925,13 +916,7 @@
                   </div>
 
                   <button
-                    onClick={() => {
-  if (g.externalUrl) {
-    window.location.href = g.externalUrl;
-  } else {
-    onSelectGame(g);
-  }
-}}
+                    onClick={() => onSelectGame(g)}
                     className="w-full py-3.5 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-slate-900 font-black rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-base"
                   >
                     <span>Грати зараз</span>
