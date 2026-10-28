@@ -154,6 +154,9 @@
         <button onclick="showMenu()" class="btn-3d w-full bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white text-2xl font-bold py-4 px-6 rounded-2xl border-b-4 border-blue-700">
             🔄 Грати ще раз
         </button>
+ <button onclick="window.location.href='index.html'" class="w-full mt-3 py-3 px-6 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition duration-200 cursor-pointer shadow-lg">
+  🏠 Повернутися до Країни Знань
+</button>
     </div>
 
     <script>
@@ -411,7 +414,19 @@
         function endGame() {
             showScreen(screenResult);
             document.getElementById('final-score').innerText = score;
-            
+            // Збереження результату для таблиці вчителя
+const gameResult = {
+  gameId: 'space-math',
+  gameTitle: 'Космічна Математика 🚀',
+  score: score,           // Набрані бали
+  maxScore: 20,          // Максимальний бал
+  date: new Date().toLocaleString('uk-UA')
+};
+
+// Зчитуємо існуючі результати та додаємо новий
+const existingResults = JSON.parse(localStorage.getItem('kraina_znan_results') || '[]');
+existingResults.push(gameResult);
+localStorage.setItem('kraina_znan_results', JSON.stringify(existingResults));
             const title = document.getElementById('result-title');
             const emoji = document.getElementById('result-emoji');
             
