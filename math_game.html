@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Космічна Математика</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #1a0b2e 0%, #2b1354 50%, #15092a 100%);
+            color: white;
+            overflow: hidden; /* Prevent scrollbar from stars */
+            touch-action: manipulation; /* Improve touch response */
+        }
+        
+        /* Background stars animation */
+        .stars {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+        }
+        
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle infinite alternate;
+        }
+        
+        @keyframes twinkle {
+            0% { opacity: 0.2; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* 3D Button styles */
+        .btn-3d {
+            transition: all 0.1s ease;
+            box-shadow: 0 6px 0px rgba(0,0,0,0.3);
+        }
+        .btn-3d:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0px rgba(0,0,0,0.3);
+        }
+
+        /* Animations for answers */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        .shake-anim {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        .pop-anim {
+            animation: pop 0.4s ease-in-out;
+        }
+
+        /* Custom Colors for answer buttons */
+        .ans-btn-0 { background-color: #f43f5e; box-shadow: 0 6px 0px #be123c; } /* Rose */
+        .ans-btn-1 { background-color: #3b82f6; box-shadow: 0 6px 0px #1d4ed8; } /* Blue */
+        .ans-btn-2 { background-color: #10b981; box-shadow: 0 6px 0px #047857; } /* Emerald */
+        .ans-btn-3 { background-color: #f59e0b; box-shadow: 0 6px 0px #b45309; } /* Amber */
+        
+        .ans-btn-0:active { box-shadow: 0 2px 0px #be123c; }
+        .ans-btn-1:active { box-shadow: 0 2px 0px #1d4ed8; }
+        .ans-btn-2:active { box-shadow: 0 2px 0px #047857; }
+        .ans-btn-3:active { box-shadow: 0 2px 0px #b45309; }
+
+        /* Floating elements */
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+        @keyframes floating {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+    
+    <!-- Dynamic background stars -->
+    <div class="stars" id="star-container"></div>
+
+    <!-- MAIN MENU SCREEN -->
+    <div id="screen-menu" class="w-full max-w-md bg-white/10 backdrop-blur-md rounded-3xl p-8 text-center shadow-2xl border border-white/20">
+        <div class="text-6xl mb-4 floating">🚀</div>
+        <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500 mb-2 filter drop-shadow-md">
+            Космічна Математика
+        </h1>
+        <p class="text-lg text-blue-200 mb-8 font-bold">+1 та -1</p>
+        
+        <div class="flex flex-col gap-4">
+            <button onclick="startCampaign()" class="btn-3d bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white text-2xl font-bold py-4 px-6 rounded-2xl border-b-4 border-blue-700">
+                🚀 Почати Місію
+                <div class="text-sm font-normal mt-1 opacity-90">(Простий ➡️ Складний рівень)</div>
+            </button>
+        </div>
+    </div>
+
+    <!-- GAMEPLAY SCREEN -->
+    <div id="screen-game" class="hidden w-full max-w-lg">
+        <!-- Top bar -->
+        <div class="flex justify-between items-center mb-6">
+            <button onclick="showMenu()" class="btn-3d bg-gray-600 text-white font-bold py-2 px-4 rounded-xl">
+                ⬅️ Назад
+            </button>
+            <div class="bg-yellow-400 text-yellow-900 font-black text-xl py-2 px-6 rounded-full shadow-lg border-2 border-yellow-200">
+                ⭐ Бали: <span id="score-display">0</span>/20
+            </div>
+        </div>
+
+        <!-- Question Box -->
+        <div id="question-box" class="bg-white rounded-3xl p-8 text-center shadow-[0_0_40px_rgba(59,130,246,0.5)] mb-8 transition-transform duration-300">
+            <div class="text-sm text-gray-500 font-bold mb-2 uppercase tracking-wider" id="level-indicator">Рівень</div>
+            <div class="text-6xl font-black text-gray-800 mb-2" id="expression-display">
+                --
+            </div>
+            <div class="text-xl text-gray-400 font-bold">Скільки буде? 🤔</div>
+        </div>
+
+        <!-- Feedback Message (Hidden by default) -->
+        <div id="feedback-msg" class="h-10 text-center text-2xl font-bold mb-4 opacity-0 transition-opacity duration-200">
+            Молодець!
+        </div>
+
+        <!-- Answers Grid -->
+        <div class="grid grid-cols-2 gap-4" id="answers-container">
+            <!-- Buttons generated by JS -->
+        </div>
+    </div>
+
+    <!-- RESULT SCREEN -->
+    <div id="screen-result" class="hidden w-full max-w-md bg-white/10 backdrop-blur-md rounded-3xl p-8 text-center shadow-2xl border border-white/20">
+        <div class="text-7xl mb-4 floating" id="result-emoji">🏆</div>
+        <h2 class="text-4xl font-black text-yellow-400 mb-4 drop-shadow-md" id="result-title">
+            Гру завершено!
+        </h2>
+        
+        <div class="bg-black/30 rounded-2xl p-6 mb-8">
+            <p class="text-xl text-blue-200 font-bold mb-2">Твій результат:</p>
+            <div class="text-6xl font-black text-white" id="final-score">0</div>
+            <p class="text-lg mt-2 text-white/80">з 20 можливих балів</p>
+        </div>
+
+        <button onclick="showMenu()" class="btn-3d w-full bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white text-2xl font-bold py-4 px-6 rounded-2xl border-b-4 border-blue-700">
+            🔄 Грати ще раз
+        </button>
+    </div>
+
+    <script>
+        // --- Generate Background Stars ---
+        const starContainer = document.getElementById('star-container');
+        for (let i = 0; i < 50; i++) {
+            const star = document.createElement('div');
+            star.classList.add('star');
+            const size = Math.random() * 4 + 1;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            star.style.left = `${Math.random() * 100}vw`;
+            star.style.top = `${Math.random() * 100}vh`;
+            star.style.animationDuration = `${Math.random() * 2 + 1}s`;
+            star.style.animationDelay = `${Math.random() * 2}s`;
+            starContainer.appendChild(star);
+        }
+
+        // --- Game State ---
+        let currentLevel = 1;
+        let score = 0;
+        let questionCount = 0;
+        const questionsPerLevel = 10;
+        let correctAnswer = 0;
+        let isAnswering = false;
+        let firstTry = true;
+
+        // --- Sound Setup (Tone.js) ---
+        let successSynth, errorSynth;
+        
+        function initSounds() {
+            if (!successSynth) {
+                successSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+                successSynth.volume.value = -8;
+            }
+            if (!errorSynth) {
+                errorSynth = new Tone.Synth({
+                    oscillator: { type: "sawtooth" },
+                    envelope: { attack: 0.05, decay: 0.2, sustain: 0.2, release: 0.5 }
+                }).toDestination();
+                errorSynth.volume.value = -8;
+            }
+        }
+
+        function playSuccessSound() {
+            try {
+                if (Tone.context.state !== 'running') Tone.context.resume();
+                successSynth.triggerAttackRelease(["C5", "E5", "G5"], "8n");
+            } catch(e){}
+        }
+
+        function playErrorSound() {
+            try {
+                if (Tone.context.state !== 'running') Tone.context.resume();
+                errorSynth.triggerAttackRelease("C3", "8n");
+            } catch(e){}
+        }
+
+        // --- DOM Elements ---
+        const screenMenu = document.getElementById('screen-menu');
+        const screenGame = document.getElementById('screen-game');
+        const screenResult = document.getElementById('screen-result');
+        
+        const scoreDisplay = document.getElementById('score-display');
+        const expressionDisplay = document.getElementById('expression-display');
+        const levelIndicator = document.getElementById('level-indicator');
+        const answersContainer = document.getElementById('answers-container');
+        const feedbackMsg = document.getElementById('feedback-msg');
+        const questionBox = document.getElementById('question-box');
+
+        // --- Utility Functions ---
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // --- Screen Navigation ---
+        function showScreen(screen) {
+            screenMenu.classList.add('hidden');
+            screenGame.classList.add('hidden');
+            screenResult.classList.add('hidden');
+            screen.classList.remove('hidden');
+        }
+
+        function showMenu() {
+            showScreen(screenMenu);
+        }
+
+        // --- Game Logic ---
+        async function startCampaign() {
+            await Tone.start(); // Ініціалізація аудіо після кліку
+            initSounds();
+
+            currentLevel = 1;
+            score = 0;
+            questionCount = 0;
+            isAnswering = false;
+            
+            levelIndicator.innerText = '🟢 Простий рівень';
+            scoreDisplay.innerText = score;
+            
+            showScreen(screenGame);
+            nextQuestion();
+        }
+
+        function generateLevel1() {
+            // Format: N +/- 1
+            const num = getRandomInt(11, 98); // Avoid boundary issues
+            const isPlus = Math.random() > 0.5;
+            const expression = `${num} ${isPlus ? '+' : '-'} 1`;
+            const answer = isPlus ? num + 1 : num - 1;
+            return { expression, answer };
+        }
+
+        function generateLevel2() {
+            // Format 1: T0 + U +/- 1 (e.g., 60 + 6 - 1)
+            // Format 2: TU - U +/- 1 (e.g., 88 - 8 + 1)
+            
+            const tens = getRandomInt(2, 9) * 10; // 20, 30... 90
+            const units = getRandomInt(1, 9); // 1... 9
+            const isFormat1 = Math.random() > 0.5;
+            const isPlusOne = Math.random() > 0.5;
+            
+            let expression = '';
+            let tempValue = 0;
+
+            if (isFormat1) {
+                // 60 + 6
+                expression = `${tens} + ${units}`;
+                tempValue = tens + units;
+            } else {
+                // 88 - 8
+                const fullNum = tens + units;
+                expression = `${fullNum} - ${units}`;
+                tempValue = tens;
+            }
+
+            expression += isPlusOne ? ' + 1' : ' - 1';
+            const answer = isPlusOne ? tempValue + 1 : tempValue - 1;
+
+            return { expression, answer };
+        }
+
+        function generateWrongAnswers(correct) {
+            const answers = new Set([correct]);
+            
+            while(answers.size < 4) {
+                const modifier = getRandomInt(-3, 3);
+                const offset = modifier === 0 ? 10 : modifier; // mix close numbers and off-by-ten
+                const wrong = correct + offset;
+                if(wrong > 0 && wrong !== correct) {
+                    answers.add(wrong);
+                }
+            }
+            return Array.from(answers);
+        }
+
+        function nextQuestion() {
+            if (questionCount >= questionsPerLevel) {
+                if (currentLevel === 1) {
+                    // Перехід на другий рівень
+                    currentLevel = 2;
+                    questionCount = 0;
+                    levelIndicator.innerText = '🟣 Складний рівень';
+                    expressionDisplay.innerText = "Рівень 2!";
+                    expressionDisplay.classList.add('text-purple-600');
+                    answersContainer.innerHTML = ''; // Очищуємо кнопки на час анімації
+                    setTimeout(() => {
+                        expressionDisplay.classList.remove('text-purple-600');
+                        nextQuestion();
+                    }, 1500);
+                    return;
+                } else {
+                    endGame();
+                    return;
+                }
+            }
+
+            isAnswering = false;
+            firstTry = true;
+            questionCount++;
+            feedbackMsg.style.opacity = '0';
+            questionBox.classList.remove('shake-anim', 'pop-anim');
+
+            // Generate Math
+            const questionData = currentLevel === 1 ? generateLevel1() : generateLevel2();
+            correctAnswer = questionData.answer;
+            expressionDisplay.innerText = questionData.expression;
+
+            // Generate Answers
+            let choices = generateWrongAnswers(correctAnswer);
+            choices = shuffleArray(choices);
+
+            // Render Buttons
+            answersContainer.innerHTML = '';
+            choices.forEach((choice, index) => {
+                const btn = document.createElement('button');
+                // Use custom colors modulo 4
+                btn.className = `btn-3d ans-btn-${index % 4} text-white font-black text-4xl py-6 rounded-2xl`;
+                btn.innerText = choice;
+                btn.onclick = () => handleAnswer(choice, btn);
+                answersContainer.appendChild(btn);
+            });
+        }
+
+        function showFeedback(isCorrect, button) {
+            feedbackMsg.style.opacity = '1';
+            if (isCorrect) {
+                playSuccessSound();
+                feedbackMsg.innerText = '🌟 Правильно! 🌟';
+                feedbackMsg.className = 'h-10 text-center text-3xl text-green-400 font-black mb-4 transition-opacity duration-200 drop-shadow-md';
+                questionBox.classList.add('pop-anim');
+            } else {
+                playErrorSound();
+                feedbackMsg.innerText = 'Ой, спробуй ще! 👾';
+                feedbackMsg.className = 'h-10 text-center text-2xl text-red-400 font-black mb-4 transition-opacity duration-200 drop-shadow-md';
+                questionBox.classList.add('shake-anim');
+                setTimeout(() => questionBox.classList.remove('shake-anim'), 400); // reset animation for repeated wrongs
+            }
+        }
+
+        function handleAnswer(selected, buttonElement) {
+            if (isAnswering && selected === correctAnswer) return; // prevent spam clicking correct answer
+
+            if (selected === correctAnswer) {
+                isAnswering = true;
+                
+                if (firstTry) {
+                    score++; // Бали нараховуються тільки за правильну відповідь з першого разу
+                }
+                
+                scoreDisplay.innerText = score;
+                showFeedback(true, buttonElement);
+                
+                // Visual effect on button
+                buttonElement.style.transform = 'scale(1.1)';
+                
+                // Wait a bit before next question
+                setTimeout(() => {
+                    nextQuestion();
+                }, 1200);
+            } else {
+                firstTry = false;
+                showFeedback(false, buttonElement);
+            }
+        }
+
+        function endGame() {
+            showScreen(screenResult);
+            document.getElementById('final-score').innerText = score;
+            
+            const title = document.getElementById('result-title');
+            const emoji = document.getElementById('result-emoji');
+            
+            if (score === 20) {
+                title.innerText = "Ідеально! Ти справжній геній!";
+                title.className = "text-4xl font-black text-green-400 mb-4 drop-shadow-md";
+                emoji.innerText = "👑";
+            } else if (score >= 15) {
+                title.innerText = "Чудовий результат! Так тримати!";
+                title.className = "text-4xl font-black text-yellow-400 mb-4 drop-shadow-md";
+                emoji.innerText = "🚀";
+            } else if (score >= 10) {
+                title.innerText = "Добре, але ти можеш краще!";
+                title.className = "text-4xl font-black text-blue-400 mb-4 drop-shadow-md";
+                emoji.innerText = "👍";
+            } else {
+                title.innerText = "Варто ще потренуватися!";
+                title.className = "text-4xl font-black text-purple-400 mb-4 drop-shadow-md";
+                emoji.innerText = "💪";
+            }
+        }
+
+        // Initialize menu on load
+        showMenu();
+    </script>
+</body>
+</html>
